@@ -1,0 +1,54 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>disable</Nullable>
+        <AssemblyName>IO.Astrodynamics.WebApp.Web.UI.Data</AssemblyName>
+        <RootNamespace>IO.Astrodynamics.WebApp.Web.UI.Data</RootNamespace>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="FuzzySharp" Version="2.0.2" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Remove="SolarSystem\de440s.bsp" />
+      <Content Include="SolarSystem\de440s.bsp" />
+      <None Remove="SolarSystem\earth_assoc_itrf93.tf" />
+      <Content Include="SolarSystem\earth_assoc_itrf93.tf" />
+      <None Remove="SolarSystem\earth_fixed.tf" />
+      <Content Include="SolarSystem\earth_fixed.tf" />
+      <None Remove="SolarSystem\earth_latest_high_prec.bpc" />
+      <Content Include="SolarSystem\earth_latest_high_prec.bpc" />
+      <None Remove="SolarSystem\earth_topo_201023.tf" />
+      <Content Include="SolarSystem\earth_topo_201023.tf" />
+      <None Remove="SolarSystem\earthstns_itrf93_201023.bsp" />
+      <Content Include="SolarSystem\earthstns_itrf93_201023.bsp" />
+      <None Remove="SolarSystem\EGM2008_to70_TideFree" />
+      <Content Include="SolarSystem\EGM2008_to70_TideFree" />
+      <None Remove="SolarSystem\geophysical.ker" />
+      <Content Include="SolarSystem\geophysical.ker" />
+      <None Remove="SolarSystem\gm_de440.tpc" />
+      <Content Include="SolarSystem\gm_de440.tpc" />
+      <None Remove="SolarSystem\L1_de431.bsp" />
+      <Content Include="SolarSystem\L1_de431.bsp" />
+      <None Remove="SolarSystem\L2_de431.bsp" />
+      <Content Include="SolarSystem\L2_de431.bsp" />
+      <None Remove="SolarSystem\L4_de431.bsp" />
+      <Content Include="SolarSystem\L4_de431.bsp" />
+      <None Remove="SolarSystem\L5_de431.bsp" />
+      <Content Include="SolarSystem\L5_de431.bsp" />
+      <None Remove="SolarSystem\latest_leapseconds.tls" />
+      <Content Include="SolarSystem\latest_leapseconds.tls" />
+      <None Remove="SolarSystem\moon_080317.tf" />
+      <Content Include="SolarSystem\moon_080317.tf" />
+      <None Remove="SolarSystem\moon_assoc_me.tf" />
+      <Content Include="SolarSystem\moon_assoc_me.tf" />
+      <None Remove="SolarSystem\moon_pa_de421_1900-2050.bpc" />
+      <Content Include="SolarSystem\moon_pa_de421_1900-2050.bpc" />
+      <None Remove="SolarSystem\pck00011.tpc" />
+      <Content Include="SolarSystem\pck00011.tpc" />
+    </ItemGroup>
+
+</Project>
