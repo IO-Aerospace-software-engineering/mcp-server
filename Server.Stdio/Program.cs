@@ -34,7 +34,8 @@ internal abstract class Program
             // Ajouter la configuration des fichiers appsettings.json avec chemins absolus
             builder.Configuration
                 .AddJsonFile(Path.Combine(baseDirectory, "appsettings.json"), optional: false, reloadOnChange: true)
-                .AddJsonFile(Path.Combine(baseDirectory, $"appsettings.{builder.Environment.EnvironmentName}.json"), optional: true, reloadOnChange: true);
+                .AddJsonFile(Path.Combine(baseDirectory, $"appsettings.{builder.Environment.EnvironmentName}.json"), optional: true, reloadOnChange: true)
+                .AddEnvironmentVariables(); // Add environment variables to configuration
             
             builder.Services.AddSerilog();
             builder.Services.AddMcpServer()
@@ -42,10 +43,13 @@ internal abstract class Program
             var app = builder.Build();
 
             Log.Information("IO-Aerospace MCP server started successfully");
-            var kernelsPath = builder.Configuration["KernelsPath"];
+            
+            // Check for environment variable override first, then fall back to configuration
+            var kernelsPath = Environment.GetEnvironmentVariable("IO_DATA_DIR") ?? builder.Configuration["KernelsPath"];
+            
             if (string.IsNullOrEmpty(kernelsPath))
             {
-                Log.Error("KernelsPath is not set in the configuration. Please set it to the directory containing the kernels.");
+                Log.Error("KernelsPath is not set. Please set it in appsettings.json or use IO_DATA_DIR environment variable.");
                 return 1;
             }
             

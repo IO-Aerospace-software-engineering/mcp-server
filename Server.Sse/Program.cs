@@ -24,6 +24,10 @@ public abstract class Program
             .WriteTo.Console()
             .CreateLogger();
         var builder = WebApplication.CreateBuilder(args);
+        
+        // Add environment variables to configuration
+        builder.Configuration.AddEnvironmentVariables();
+        
         builder.Host.UseSerilog();
         // Configure JSON options for the entire application including System.Text.Json defaults
         builder.Services.ConfigureHttpJsonOptions(options => { options.SerializerOptions.NumberHandling = JsonNumberHandling.AllowNamedFloatingPointLiterals; });
@@ -90,15 +94,29 @@ public abstract class Program
             var logger = app.Services.GetRequiredService<ILogger<Program>>();
             logger.LogInformation("IO-Aerospace MCP server starting...");
             
-            var kernelsPath = builder.Configuration["KernelsPath"];
+            // Check for environment variable override first, then fall back to configuration
+            var kernelsPath = Environment.GetEnvironmentVariable("IO_DATA_DIR") ?? builder.Configuration["KernelsPath"];
+            
             logger.LogInformation("Trying to load kernels from {KernelsPath}", kernelsPath);
             if (string.IsNullOrEmpty(kernelsPath))
             {
-                Log.Error("KernelsPath is not set in the configuration. Please set it to the directory containing the kernels.");
+                Log.Error("KernelsPath is not set. Please set it in appsettings.json or use IO_DATA_DIR environment variable.");
+                return 1;
+            }
+            
+            // Construire le chemin absolu vers les kernels
+            var baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
+            var absoluteKernelsPath = Path.IsPathRooted(kernelsPath) 
+                ? kernelsPath 
+                : Path.Combine(baseDirectory, kernelsPath);
+            
+            if (!Directory.Exists(absoluteKernelsPath))
+            {
+                logger.LogError("Kernels directory does not exist: {AbsoluteKernelsPath}", absoluteKernelsPath);
                 return 1;
             }
 
-            API.Instance.LoadKernels(new DirectoryInfo(kernelsPath!));
+            API.Instance.LoadKernels(new DirectoryInfo(absoluteKernelsPath));
             logger.LogInformation("Kernels loaded successfully from {KernelsPath}", kernelsPath);
             logger.LogInformation("IO-Aerospace MCP server started successfully");
             app.Run();
