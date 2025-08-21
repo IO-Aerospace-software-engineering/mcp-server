@@ -1,5 +1,6 @@
 ﻿using IO.Astrodynamics;
 using IO.MCP.AI;
+using IO.MCP.AI.Tools;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -37,7 +38,7 @@ internal abstract class Program
             
             builder.Services.AddSerilog();
             builder.Services.AddMcpServer()
-                .WithStdioServerTransport().WithToolsFromAssembly(typeof(AIServices).Assembly);
+                .WithStdioServerTransport().WithToolsFromAssembly(typeof(CelestialBodyTools).Assembly);
             var app = builder.Build();
 
             Log.Information("IO-Aerospace MCP server started successfully");

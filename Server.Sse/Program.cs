@@ -3,6 +3,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using IO.Astrodynamics;
 using IO.MCP.AI;
+using IO.MCP.AI.Tools;
 using Microsoft.AspNetCore.Http.Json;
 using Microsoft.Extensions.Configuration.Json;
 using ModelContextProtocol.Protocol;
@@ -51,7 +52,7 @@ public abstract class Program
                 opt.ServerInfo = new Implementation { Name = "IO Aerospace -- MCP Server", Title = "IO Aerospace - MCP Server", Version = "0.1.0" };
             })
             .WithHttpTransport()
-            .WithToolsFromAssembly(typeof(AIServices).Assembly);
+            .WithToolsFromAssembly(typeof(CelestialBodyTools).Assembly);
         builder.Services.AddOpenTelemetry()
             .WithTracing(b => b.AddSource("*")
                 .AddAspNetCoreInstrumentation()

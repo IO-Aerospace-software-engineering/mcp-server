@@ -30,7 +30,7 @@ public class CelestialBodyTools
         [Description("Aberration correction.")]
         Aberration aberrationCorrection)
     {
-        timeStep = System.Math.Max(timeStep, 1);
+        timeStep = Math.Max(timeStep, 1);
         var observerDomain = Astrodynamics.Body.CelestialItem.Create(MCP.Data.DataProvider.FindCelestialBody(observerName.ToString()).NaifId);
         var target = Astrodynamics.Body.CelestialItem.Create(MCP.Data.DataProvider.FindCelestialBody(targetName.ToString()).NaifId);
         var window = new Window(new Time(startTime), new Time(endTime));
@@ -44,11 +44,11 @@ public class CelestialBodyTools
 
     [McpServerTool(Idempotent = true, ReadOnly = true, Title = "Get celestial body properties", UseStructuredContent = true)]
     [Description("Gets geophysical properties of a celestial body")]
-    public static Models.CelestialBody GetCelestialBodyProperties(
+    public static CelestialBody GetCelestialBodyProperties(
         [Description("Celestial body name")] PlanetsMoonsEnum celestialBodyName)
     {
         var res = API.Instance.GetCelestialBodyInfo((int)celestialBodyName);
-        return new Models.CelestialBody()
+        return new CelestialBody()
         {
             NaifId = res.Id,
             CenterOfMotionId = res.CenterOfMotionId,
