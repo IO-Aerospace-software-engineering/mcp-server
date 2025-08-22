@@ -416,3 +416,34 @@ FodyWeavers.xsd
 *.msix
 *.msm
 *.msp
+
+# .NET build outputs
+bin/
+obj/
+*.user
+*.suo
+*.cache
+*.dll
+*.pdb
+
+# IDE files
+.vs/
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Docker
+.dockerignore
+
+# Production configuration with real domains
+docker-compose.prod.yml
+
+# Deployment backups
+backup-compose-*.yml
+
+# Local environment files
+.env
+.env.local

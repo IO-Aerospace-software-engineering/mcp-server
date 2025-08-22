@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+  mcp-server:
+    build:
+      context: .
+      dockerfile: Server.Sse/Dockerfile
+    ports:
+      - "8080:8080"
+      - "8081:8081"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:8080
+      - IO_DATA_DIR=/data/solarsystem
+    volumes:
+      # Mount host directory to container's kernel path
+      - ./Data/SolarSystem:/data/solarsystem:ro
+      # Alternative: use a named volume or absolute host path
+      # - /path/on/host/to/kernels:/data/solarsystem:ro
+    restart: unless-stopped

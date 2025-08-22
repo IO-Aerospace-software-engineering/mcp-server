@@ -1,0 +1,60 @@
+# Production deployment with external kernel data and Traefik integration
+version: '3.8'
+
+services:
+  traefik:
+    image: traefik:v3.5
+    container_name: traefik
+    command:
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entryPoints.web.address=:80"
+      - "--api.dashboard=false"  # disable dashboard by default
+      #- "--api.insecure=true"  # dashboard accessible
+    ports:
+      - "80:80"
+      #- "8080:8080"  # dashboard optionnel
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+    networks:
+      - webnet
+
+  mcp.server:
+    image: ioaerospace/astrodynamics-mcp:latest
+    expose:
+      - "8080"
+    networks:
+      - webnet
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:8080
+      - IO_DATA_DIR=/data/solarsystem
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.mcp.rule=Host(`your-mcp-domain.com`)"
+      - "traefik.http.routers.mcp.entrypoints=web"
+      - "traefik.http.services.mcp.loadbalancer.server.port=8080"
+    volumes:
+      - "./data/solarsystem:/data/solarsystem:ro"
+    restart: unless-stopped
+
+  api.server:
+    build:
+      context: .
+      dockerfile: API/Interface/Dockerfile
+    image: ioaerospace/astrodynamics-api
+    expose:
+      - "8080"
+    networks:
+      - webnet
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.api.rule=Host(`your-api-domain.com`)"
+      - "traefik.http.routers.api.entrypoints=web"
+      - "traefik.http.services.api.loadbalancer.server.port=8080"
+    volumes:
+      - "./data/solarsystem:/data/solarsystem:ro"
+
+networks:
+  webnet:
+    driver: bridge

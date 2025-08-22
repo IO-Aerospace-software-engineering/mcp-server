@@ -27,8 +27,6 @@ WORKDIR /app
 # Copy the published application
 COPY --from=build /app/publish .
 
-# Copy the Solar System data from the Data project
-COPY --from=build /src/Data/SolarSystem ./SolarSystem
 
 # Expose the default ASP.NET Core port
 EXPOSE 8080

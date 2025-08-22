@@ -1,0 +1,12 @@
+# Override file for development - mount kernels from local Data directory
+version: '3.8'
+
+services:
+  mcp-server:
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      # Update to match the production path structure
+      - IO_DATA_DIR=/data/solarsystem
+    volumes:
+      # Mount local SolarSystem data for development, matching production structure
+      - ./Data/SolarSystem:/data/solarsystem:ro
