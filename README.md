@@ -16,9 +16,28 @@ The server includes comprehensive tools for:
 - Mathematical conversions for aerospace calculations
 - Time system conversions and utilities
 
+## Project Structure
+
+```
+mcp-server/
+├── AI/                           # AI tools and models
+│   ├── Tools/                    # Core calculation tools
+│   ├── Models/                   # Data models and types
+│   └── Converters/              # Type converters
+├── Data/                         # Data providers and solar system kernels
+│   ├── SolarSystem/             # SPICE kernel files
+│   └── SolarSystemObjects/      # Celestial body definitions
+├── Server.Sse/                  # HTTP/SSE transport server
+├── Server.Stdio/                # STDIO transport server
+├── docker-compose.yml           # Development Docker configuration
+├── docker-compose.prod.example.yml  # Production template
+└── deploy-production.sh         # Production deployment script
+```
+
 ## Prerequisites
 
 - .NET 9.0 SDK or runtime
+- Docker (for containerized deployment)
 - Solar system kernels data (SPICE kernels)
 
 ## Available Tools
@@ -62,23 +81,43 @@ The server includes comprehensive tools for:
 - **MetersToParsec** / **ParsecToMeters**: Stellar distance conversions
 - **MetersToLightYears** / **LightYearsToMeters**: Cosmic distance conversions
 
-## Setup Instructions
+## Quick Start
 
-### 1. Clone and Build
+### Docker Deployment (Recommended)
 
+#### Development
+```bash
+git clone https://github.com/IO-Aerospace-software-engineering/mcp-server
+cd mcp-server
+docker-compose up
+```
+
+The SSE server will be available at `http://localhost:8080`
+
+#### Production
+1. Copy `docker-compose.prod.example.yml` to `docker-compose.prod.yml`
+2. Update the domain names in the production file
+3. Ensure kernel data exists at `./data/solarsystem/`
+4. Deploy using the automated script:
+
+```bash
+./deploy-production.sh
+```
+
+### Native .NET Deployment
+
+#### 1. Clone and Build
 ```bash
 git clone https://github.com/IO-Aerospace-software-engineering/mcp-server
 cd mcp-server
 dotnet build
 ```
 
-### 2. Solar System Data Setup
+#### 2. Solar System Data Setup
 
-The server requires SPICE kernels for solar system calculations. You can configure the kernels location in two ways:
+The server requires SPICE kernels for solar system calculations. You can configure the path in multiple ways (in order of priority):
 
-#### Option A: Environment Variable (Recommended)
-Set the `IO_DATA_DIR` environment variable to point to your kernels directory:
-
+1. **Environment Variable** (Recommended):
 ```bash
 # Linux/macOS
 export IO_DATA_DIR="/path/to/your/spice/kernels"
@@ -87,418 +126,108 @@ export IO_DATA_DIR="/path/to/your/spice/kernels"
 set IO_DATA_DIR=C:\path\to\your\spice\kernels
 ```
 
-#### Option B: Configuration File
-Place your kernel files in a `SolarSystem` directory relative to the executable, or edit the `KernelsPath` in `appsettings.json`:
+2. **Configuration File**: Edit `KernelsPath` in `appsettings.json`
+3. **Default Location**: Place files in `Data/SolarSystem/` directory
 
+**Required Kernel Files:**
 ```
-mcp-server/
-??? Data/SolarSystem/          # Default location
-?   ??? de440.bsp             # Planetary ephemeris
-?   ??? pck00011.tpc          # Planetary constants
-?   ??? ...                   # Other kernel files
+kernels/
+├── de440s.bsp              # Planetary ephemeris
+├── latest_leapseconds.tls  # Leap seconds
+├── pck00011.tpc           # Planetary constants
+├── earth_latest_high_prec.bpc  # Earth orientation
+└── ...                    # Additional kernel files
 ```
 
-**Note**: Environment variable `IO_DATA_DIR` takes priority over the configuration file setting.
+- `IO_DATA_DIR`: Override kernels directory path (takes priority over appsettings.json)
 
-## Usage Options
+#### 3. Choose Transport Method
 
-### Option 1: STDIO Transport (Recommended)
-
-The STDIO transport is ideal for MCP clients and command-line usage.
-
-#### Development Mode
+##### STDIO Transport (For MCP Clients)
 ```bash
 cd Server.Stdio
 dotnet run
 ```
 
-#### Production Mode
-```bash
-cd Server.Stdio
-dotnet run --configuration Release
-```
-
-#### Published Executable
-```bash
-# Publish the application
-dotnet publish Server.Stdio/Server.Stdio.csproj -c Release -o ./publish-stdio
-
-# Run the published executable
-./publish-stdio/Server.Stdio
-```
-
-#### Configuration
-Edit `Server.Stdio/appsettings.json`:
-```json
-{
-  "Logging": {
-    "LogLevel": {
-      "Default": "Information",
-      "Microsoft.AspNetCore": "Warning"
-    }
-  },
-  "KernelsPath": "SolarSystem"
-}
-```
-
-### Option 2: SSE Transport (Web/HTTP)
-
-The SSE transport provides HTTP endpoints for web-based integrations.
-
-#### Development Mode
+##### SSE Transport (For Web/HTTP)
 ```bash
 cd Server.Sse
 dotnet run
+# Server available at http://localhost:8080
 ```
 
-#### Production Mode
-```bash
-cd Server.Sse
-dotnet run --configuration Release
-```
+## Docker Configuration
 
-#### URLs
-- Development: `http://localhost:5000` and `https://localhost:5001`
-- Production: `http://localhost:8080`
+### Development Environment
+- **File**: `docker-compose.yml`
+- **Ports**: 8080 (HTTP), 8081 (HTTPS)
+- **Data**: Mounted from `./Data/SolarSystem`
+- **Usage**: `docker-compose up`
 
-#### Configuration
-Edit `Server.Sse/appsettings.json`:
-```json
-{
-  "Logging": {
-    "LogLevel": {
-      "Default": "Information",
-      "Microsoft.AspNetCore": "Warning"
-    }
-  },
-  "KernelsPath": "SolarSystem"
-}
-```
-
-### Option 3: Docker (SSE Transport)
-
-Use the provided Dockerfile to run the SSE server in a container.
-
-#### Build and Run
-```bash
-# Build the Docker image
-docker build -t io-aerospace-mcp-server .
-
-# Run the container
-docker run -p 8080:8080 -p 8081:8081 io-aerospace-mcp-server
-```
-
-#### Access
-- Server will be available at `http://localhost:8080`
-- SSL available at `http://localhost:8081`
+### Production Environment
+- **File**: `docker-compose.prod.yml` (create from example)
+- **Features**: Traefik reverse proxy, optimized images
+- **Data**: Host-mounted from `./data/solarsystem`
+- **Deployment**: Automated via `deploy-production.sh`
 
 ## MCP Client Integration
 
-### Universal MCP Configuration
-
-Here's a comprehensive MCP configuration supporting both local and remote server deployments:
-
-```json
-{
-  "servers": {
-    "io-astrodynamics": {
-      "type": "stdio",
-      "command": "/opt/io/io-mcp-stdio",
-      "args": [],
-      "env": {
-        "IO_DATA_DIR": "/opt/io/data",
-        "LOG_LEVEL": "info"
-      }
-    },
-    "io-astrodynamics-remote": {
-      "type": "http",
-      "url": "https://mcp.io-aerospace.org/"
-    },
-    "io-astrodynamics-local-http": {
-      "type": "http", 
-      "url": "http://localhost:8080/mcp"
-    }
-  },
-  "inputs": []
-}
-```
-
 ### Claude Desktop Configuration
+Add to your Claude Desktop configuration:
 
-#### Local STDIO Server with Custom Data Path
 ```json
 {
   "mcpServers": {
-    "io-aerospace": {
-      "command": "C:\\path\\to\\your\\Server.Stdio.exe",
+    "astrodynamics": {
+      "command": "/path/to/Server.Stdio",
       "args": [],
       "env": {
-        "IO_DATA_DIR": "C:\\path\\to\\your\\spice\\kernels",
-        "LOG_LEVEL": "Information"
+        "IO_DATA_DIR": "/path/to/kernels"
       }
     }
   }
 }
 ```
 
-#### Local HTTP Server with Environment Override
-```json
-{
-  "mcpServers": {
-    "io-aerospace-http": {
-      "command": "C:\\path\\to\\your\\Server.Sse.exe",
-      "args": [],
-      "env": {
-        "ASPNETCORE_URLS": "http://localhost:8080",
-        "IO_DATA_DIR": "C:\\path\\to\\your\\spice\\kernels",
-        "LOG_LEVEL": "Information"
-      }
-    }
-  }
-}
-```
+### HTTP/SSE Integration
+For web-based integrations, connect to the SSE endpoint:
 
-#### Remote HTTP Server
-```json
-{
-  "mcpServers": {
-    "io-aerospace-remote": {
-      "type": "sse",
-      "url": "https://your-domain.com/mcp/sse"
-    }
-  }
-}
-```
-
-### Self-Contained Deployment for MCP Clients
-
-Create a self-contained executable for easy distribution:
-
-```bash
-# Windows x64
-dotnet publish Server.Stdio/Server.Studio.csproj -c Release -r win-x64 --self-contained -o ./dist/win-x64
-
-# Linux x64
-dotnet publish Server.Studio/Server.Studio.csproj -c Release -r linux-x64 --self-contained -o ./dist/linux-x64
-
-# macOS x64
-dotnet publish Server.Studio/Server.Studio.csproj -c Release -r osx-x64 --self-contained -o ./dist/osx-x64
-
-# macOS ARM64
-dotnet publish Server.Studio/Server.Studio.csproj -c Release -r osx-arm64 --self-contained -o ./dist/osx-arm64
-```
-
-### Custom MCP Client Integration
-
-#### STDIO Transport
-```python
-import subprocess
-import json
-
-# Start the MCP server process
-process = subprocess.Popen(
-    ['./Server.Stdio.exe'],
-    stdin=subprocess.PIPE,
-    stdout=subprocess.PIPE,
-    stderr=subprocess.PIPE,
-    text=True
-)
-
-# Send MCP messages via stdin
-message = {
-    "jsonrpc": "2.0",
-    "id": 1,
-    "method": "tools/list",
-    "params": {}
-}
-process.stdin.write(json.dumps(message) + '\n')
-process.stdin.flush()
-```
-
-#### SSE Transport
 ```javascript
-// Connect via Server-Sent Events
-const eventSource = new EventSource('http://localhost:8080/sse');
-
-eventSource.onmessage = function(event) {
-    const data = JSON.parse(event.data);
-    console.log('Received:', data);
-};
-
-// Send HTTP requests for tool calls
-async function callTool(toolName, parameters) {
-    const response = await fetch('http://localhost:8080/mcp/tools/call', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            name: toolName,
-            arguments: parameters
-        })
-    });
-    return await response.json();
-}
-```
-
-## Configuration Options
-
-### Kernels Path Configuration
-The server requires SPICE kernels for solar system calculations. You can configure the path in multiple ways (in order of priority):
-
-1. **Environment Variable** (highest priority): `IO_DATA_DIR`
-2. **Configuration File**: `KernelsPath` in `appsettings.json`
-
-#### Examples:
-```bash
-# Using environment variable
-export IO_DATA_DIR="/opt/io/data"
-./Server.Stdio
-
-# Using configuration file
-# Edit appsettings.json: "KernelsPath": "SolarSystem"
-```
-
-### Logging
-Both servers support comprehensive logging with Serilog:
-- Console output
-- File logging (STDIO version writes to `logs/` directory)
-- Configurable log levels via `LOG_LEVEL` environment variable or configuration
-
-### Environment Variables
-- `IO_DATA_DIR`: Override kernels directory path (takes priority over appsettings.json)
-- `LOG_LEVEL`: Set logging level (Trace, Debug, Information, Warning, Error, Fatal)
-- `ASPNETCORE_URLS`: Server URLs for SSE transport (default: `http://+:8080`)
-- `ASPNETCORE_ENVIRONMENT`: Environment (Development/Production)
-
-## Example Usage
-
-Once connected via MCP client, you can use tools like:
-
-### Calculate Mars Position from Earth
-```json
-{
-  "tool": "GetEphemerisAsStateVectors",
-  "parameters": {
-    "observerName": "EARTH",
-    "targetName": "MARS",
-    "frame": "ICRF",
-    "startTime": "2024-01-01T00:00:00",
-    "endTime": "2024-01-02T00:00:00",
-    "timeStep": 3600,
-    "aberrationCorrection": "LT"
-  }
-}
-```
-
-### Convert Orbital Elements
-```json
-{
-  "tool": "ConvertStateVectorToKeplerianElements",
-  "parameters": {
-    "stateVector": {
-      "centerOfMotion": "EARTH",
-      "epoch": {"dateTime": "2024-01-01T00:00:00", "kind": "UTC"},
-      "frame": "ICRF",
-      "position": {"x": 7000000, "y": 0, "z": 0},
-      "velocity": {"x": 0, "y": 7500, "z": 0}
-    }
-  }
-}
-```
-
-### Unit Conversions
-```json
-{
-  "tool": "DegreesToRadians",
-  "parameters": {
-    "degrees": 45.0
-  }
-}
+const eventSource = new EventSource('http://your-domain/sse');
 ```
 
 ## Troubleshooting
 
 ### Common Issues
 
-1. **"KernelsPath is not set"**: Ensure the `KernelsPath` is configured in `appsettings.json`
-2. **"Kernels directory does not exist"**: Verify the kernels path exists and contains SPICE files
-3. **Port conflicts (SSE)**: Change ports in `appsettings.json` or via environment variables
-4. **MCP client connection issues**: Verify the executable path and permissions
-5. **Remote server connectivity**: Check network connectivity and URL accessibility
+1. **"Kernels directory does not exist"**: Verify the kernels path exists and contains SPICE files
+2. **"Failed to load kernel"**: Ensure all required kernel files are present and accessible
+3. **Connection errors**: Check firewall settings and port availability
 
-### Logs Location
-- STDIO: `logs/IO-MCP-Server_YYYYMMDD.log`
-- SSE: Console output and configured logging providers
-
-### Debugging MCP Integration
-- Enable verbose logging in `appsettings.json`
-- Check MCP client logs for connection errors
-- Verify tool schemas match expected formats
-- Test with simple tools first (e.g., `CurrentDateTime`)
-
-## Development
-
-### Project Structure
-- `AI/`: Core astrodynamics tools and MCP integration
-- `Data/`: Solar system data and utilities
-- `Server.Stdio/`: STDIO transport implementation
-- `Server.Sse/`: HTTP/SSE transport implementation
-
-### Building from Source
+### Log Monitoring
 ```bash
-# Restore dependencies
-dotnet restore
+# Development
+docker-compose logs -f
 
-# Build all projects
-dotnet build
-
-# Run tests (if available)
-dotnet test
+# Production
+docker logs -f container-name
 ```
 
-### Adding New Tools
-1. Create a new class in `AI/Tools/` with `[McpServerToolType]` attribute
-2. Add methods with `[McpServerTool]` and `[Description]` attributes
-3. Register in Program.cs with `WithToolsFromAssembly(typeof(YourToolClass).Assembly)`
+## Contributing
 
-## Deployment
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
-### Production Deployment (Self-Contained)
-```bash
-# Create production build
-dotnet publish Server.Stdio/Server.Stdio.csproj \
-  -c Release \
-  -r linux-x64 \
-  --self-contained \
-  -p:PublishSingleFile=true \
-  -o ./deploy
+## License
 
-# Copy kernels data
-cp -r Data/SolarSystem ./deploy/
-```
-
-### Systemd Service (Linux)
-```ini
-[Unit]
-Description=IO Aerospace MCP Server
-After=network.target
-
-[Service]
-Type=exec
-ExecStart=/opt/io-aerospace/Server.Stdio
-WorkingDirectory=/opt/io-aerospace
-User=io-aerospace
-Environment=ASPNETCORE_ENVIRONMENT=Production
-Restart=always
-
-[Install]
-WantedBy=multi-user.target
-```
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## Support
 
-For issues and questions:
-- GitHub Issues: [IO-Aerospace-software-engineering/mcp-server](https://github.com/IO-Aerospace-software-engineering/mcp-server)
-- Ensure you have the latest .NET 9 runtime/SDK installed
-- Verify your SPICE kernels are properly configured
+For support and questions:
+- Create an issue on GitHub
+- Check the troubleshooting section above
+- Review the deployment guide in [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md)
