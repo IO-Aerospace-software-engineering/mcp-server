@@ -2,11 +2,6 @@ name: Release single-file (server.Stdio)
 
 on:
   workflow_dispatch:
-    inputs:
-      rid:
-        description: ".NET Runtime Identifier (e.g., linux-x64, win-x64, osx-arm64)"
-        required: true
-        default: "linux-x64"
   push:
     tags:
       - "v*"
@@ -14,6 +9,10 @@ on:
 jobs:
   publish:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        rid: [ linux-x64, win-x64, osx-arm64 ]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -30,7 +29,7 @@ jobs:
         id: publish
         shell: bash
         env:
-          RID: ${{ github.event.inputs.rid || 'linux-x64' }}
+          RID: ${{ matrix.rid }}
         run: |
           set -euo pipefail
           PROJ="Server.Stdio/Server.Stdio.csproj"
@@ -63,6 +62,6 @@ jobs:
       - name: Upload executable artifact
         uses: actions/upload-artifact@v4
         with:
-          name: io-aerosapce-mcp-${{ github.ref_name }}-${{ github.event.inputs.rid || 'linux-x64' }}
+          name: io-aerosapce-mcp-${{ github.ref_name }}-${{ matrix.rid }}
           path: ${{ steps.publish.outputs.exe }}
           if-no-files-found: error
