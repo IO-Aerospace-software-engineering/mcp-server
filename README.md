@@ -317,3 +317,5 @@ For support and questions:
 - Create an issue on GitHub
 - Check the troubleshooting section above
 - Review the deployment guide in [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md)
+
+Sylvain
