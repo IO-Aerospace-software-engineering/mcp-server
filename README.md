@@ -22,6 +22,12 @@ The server includes comprehensive tools for:
 - Mathematical conversions for aerospace calculations
 - Time system conversions and utilities
 
+## Astrodynamics Framework
+
+This server is powered by the IO Aerospace Astrodynamics framework, which provides the core algorithms for ephemerides, orbital mechanics, geometry, and time systems.
+
+- Repository: https://github.com/IO-Aerospace-software-engineering/Astrodynamics
+
 ## Use the hosted server (recommended)
 
 You can start integrating immediately against the production instance:
