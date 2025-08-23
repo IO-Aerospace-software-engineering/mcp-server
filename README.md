@@ -1,6 +1,7 @@
 # IO Aerospace MCP Server
 
-> Use it now — hosted in production (no setup needed): https://mcp.io-aerospace.org/
+## Use it now
+> Hosted in production (no setup needed): https://mcp.io-aerospace.org/
 >
 > SSE endpoint: https://mcp.io-aerospace.org/sse
 >
