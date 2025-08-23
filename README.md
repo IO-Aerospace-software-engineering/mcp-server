@@ -266,6 +266,15 @@ console.log("Tools:", tools);
 // console.log(result);
 ```
 
+## Sponsor
+
+If this project helps your work, please consider sponsoring ongoing development, hosting, and data updates.
+
+- Sponsor page: https://github.com/sponsors/IO-Aerospace-software-engineering
+- Businesses: open an issue to discuss invoices or custom arrangements
+
+Your support helps keep the hosted server online and the SPICE data current.
+
 ## Troubleshooting
 
 ### Common Issues
