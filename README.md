@@ -1,5 +1,11 @@
 # IO Aerospace MCP Server
 
+> Use it now — hosted in production (no setup needed): https://mcp.io-aerospace.org/
+>
+> SSE endpoint: https://mcp.io-aerospace.org/sse
+>
+> Note: Most MCP clients that support HTTP/SSE only need the base URL; they will connect to the SSE stream internally (commonly at `/sse`). The explicit `/sse` URL is provided here for manual/web integrations.
+
 A Model Context Protocol (MCP) server for aerospace and astrodynamics calculations, providing tools for celestial body ephemeris, orbital mechanics, and space mission analysis.
 
 ## Overview
@@ -15,6 +21,27 @@ The server includes comprehensive tools for:
 - Solar system object properties and characteristics
 - Mathematical conversions for aerospace calculations
 - Time system conversions and utilities
+
+## Use the hosted server (recommended)
+
+You can start integrating immediately against the production instance:
+- Base URL: https://mcp.io-aerospace.org/
+- SSE stream: https://mcp.io-aerospace.org/sse
+
+Example (browser/Node):
+```javascript
+const eventSource = new EventSource('https://mcp.io-aerospace.org/sse');
+
+eventSource.onmessage = (event) => {
+  console.log('message', event.data);
+};
+
+eventSource.onerror = (err) => {
+  console.error('sse error', err);
+};
+```
+
+Self-hosting is optional; see below for Docker and .NET instructions.
 
 ## Project Structure
 
@@ -81,9 +108,9 @@ mcp-server/
 - **MetersToParsec** / **ParsecToMeters**: Stellar distance conversions
 - **MetersToLightYears** / **LightYearsToMeters**: Cosmic distance conversions
 
-## Quick Start
+## Quick Start (self-hosting)
 
-### Docker Deployment (Recommended)
+### Docker Deployment
 
 #### Development
 ```bash
@@ -92,7 +119,7 @@ cd mcp-server
 docker-compose up
 ```
 
-The SSE server will be available at `http://localhost:8080`
+The SSE server will be available at `http://localhost:8080`.
 
 #### Production
 1. Copy `docker-compose.prod.example.yml` to `docker-compose.prod.yml`
@@ -172,7 +199,9 @@ dotnet run
 
 ## MCP Client Integration
 
-### Claude Desktop Configuration
+Note: Many MCP clients use JSON-based configuration files, but schemas differ per client. The JSON examples below use Claude Desktop’s schema; adapt keys to your client’s format.
+
+### Claude Desktop Configuration (STDIO)
 Add to your Claude Desktop configuration:
 
 ```json
@@ -189,11 +218,52 @@ Add to your Claude Desktop configuration:
 }
 ```
 
-### HTTP/SSE Integration
-For web-based integrations, connect to the SSE endpoint:
+### Claude Desktop Configuration (HTTP transport to hosted server)
+Use your production server over HTTP/SSE by specifying the base URL only:
 
-```javascript
-const eventSource = new EventSource('http://your-domain/sse');
+```json
+{
+  "mcpServers": {
+    "astrodynamics": {
+      "transport": {
+        "type": "http",
+        "url": "https://mcp.io-aerospace.org"
+      }
+    }
+  }
+}
+```
+
+- Only the base URL is required; the client will use the SSE stream internally (commonly at `/sse`).
+- This schema is for Claude Desktop; other clients may use different keys.
+
+### Other MCP clients
+- Provide the base URL: https://mcp.io-aerospace.org
+- Add headers (e.g., Authorization) only if your deployment requires it
+- Don’t append `/sse` unless your client documentation requires it; most discover the SSE path
+- Refer to your client’s documentation for the exact JSON schema or settings UI
+
+### Node.js MCP client (HTTP/SSE)
+Using the MCP SDK to connect to the hosted server and list tools:
+
+```ts
+import { Client } from "@modelcontextprotocol/sdk/client/index.js";
+import { HttpClientTransport } from "@modelcontextprotocol/sdk/client/transport/http.js";
+
+const transport = new HttpClientTransport(new URL("https://mcp.io-aerospace.org"));
+const client = new Client(
+  { name: "example-client", version: "1.0.0" },
+  { capabilities: { tools: {}, prompts: {}, resources: {} } },
+  transport
+);
+
+await client.connect();
+const tools = await client.listTools();
+console.log("Tools:", tools);
+
+// Example: call a tool
+// const result = await client.callTool({ name: "GetEphemerisAsStateVectors", arguments: { /* ... */ } });
+// console.log(result);
 ```
 
 ## Troubleshooting
