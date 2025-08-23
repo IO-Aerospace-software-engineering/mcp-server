@@ -33,3 +33,24 @@ dotnet publish ./Server.Stdio/Server.Stdio.csproj -c Release -r win-x64   -p:Pub
 # macOS (unsigned)
 dotnet publish ./Server.Stdio/Server.Stdio.csproj -c Release -r osx-arm64 -p:PublishSingleFile=true -p:SelfContained=true
 ```
+
+## Prevent merging PRs if the build fails
+
+Use GitHub Branch protection rules:
+
+1) Trigger the CI at least once so the check appears:
+   - Actions → CI → Run workflow (manual), or push a commit/open a PR to the protected branch.
+2) Go to: Repository → Settings → Branches → Branch protection rules → New rule.
+3) Branch name pattern: main (or your default branch).
+4) Enable:
+   - Require a pull request before merging
+   - Require status checks to pass before merging
+5) In “Status checks that are required”:
+   - If populated: select “CI / build”.
+   - If empty: type “CI / build” and add it manually.
+6) (Optional) Also enable:
+   - Require branches to be up to date before merging
+   - Require approvals
+   - Include administrators
+
+After saving, PRs can’t be merged unless the “CI / build” check succeeds.
