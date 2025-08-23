@@ -1,0 +1,68 @@
+name: Release single-file (server.Stdio)
+
+on:
+  workflow_dispatch:
+    inputs:
+      rid:
+        description: ".NET Runtime Identifier (e.g., linux-x64, win-x64, osx-arm64)"
+        required: true
+        default: "linux-x64"
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "9.0.x"
+
+      # Note:
+      # - You can cross-publish for other OSes on ubuntu-latest by changing RID (e.g., win-x64, osx-arm64).
+      # - macOS binaries produced here are unsigned; signing/notarization must be performed on macOS.
+      - name: Publish single-file
+        id: publish
+        shell: bash
+        env:
+          RID: ${{ github.event.inputs.rid || 'linux-x64' }}
+        run: |
+          set -euo pipefail
+          PROJ="Server.Stdio/Server.Stdio.csproj"
+          echo "Publishing $PROJ for RID=$RID"
+
+          dotnet publish "$PROJ" -c Release -r "$RID" \
+            -p:PublishSingleFile=true \
+            -p:SelfContained=true \
+            -p:PublishTrimmed=false
+
+          TF=$(dotnet msbuild "$PROJ" -getproperty:TargetFramework -nologo -v:quiet)
+          PUB_DIR="$(dirname "$PROJ")/bin/Release/${TF}/${RID}/publish"
+          echo "publish_dir=$PUB_DIR" >> "$GITHUB_OUTPUT"
+          echo "Publish dir: $PUB_DIR"
+
+          if [[ "$RID" == win* ]]; then
+            EXE=$(find "$PUB_DIR" -maxdepth 1 -type f -name "*.exe" | head -n1 || true)
+          else
+            EXE=$(find "$PUB_DIR" -maxdepth 1 -type f -perm -u+x | head -n1 || true)
+          fi
+
+          if [ -z "$EXE" ]; then
+            echo "No executable found in $PUB_DIR" >&2
+            ls -la "$PUB_DIR" || true
+            exit 1
+          fi
+          echo "exe=$EXE" >> "$GITHUB_OUTPUT"
+          echo "Executable: $EXE"
+
+      - name: Upload executable artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: io-aerosapce-mcp-${{ github.ref_name }}-${{ github.event.inputs.rid || 'linux-x64' }}
+          path: ${{ steps.publish.outputs.exe }}
+          if-no-files-found: error
