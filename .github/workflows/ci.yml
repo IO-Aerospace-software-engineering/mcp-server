@@ -17,8 +17,8 @@ jobs:
         with:
           dotnet-version: "9.0.x"
 
-      - name: Restore
-        run: dotnet restore
+      - name: Restore MCP.sln
+        run: dotnet restore MCP.sln
 
-      - name: Build (Release)
-        run: dotnet build --no-restore -c Release
+      - name: Build MCP.sln (Release)
+        run: dotnet build MCP.sln -c Release --no-restore

@@ -1,6 +1,6 @@
 # CI/CD
 
-- CI: Builds the repository on every push and PR (.github/workflows/ci.yml).
+- CI: Builds the `MCP.sln` solution on every push and PR (.github/workflows/ci.yml).
 - CD: Publishes single-file executables for `server.Stdio` for three OS targets in one run (.github/workflows/release.yml).
 
 How to trigger deployment:
