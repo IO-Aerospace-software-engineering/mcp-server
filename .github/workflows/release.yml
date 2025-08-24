@@ -39,9 +39,6 @@ jobs:
         with:
           dotnet-version: "9.0.x"
 
-      # Note:
-      # - You can cross-publish for other OSes on ubuntu-latest by changing RID (e.g., win-x64, osx-arm64).
-      # - macOS binaries produced here are unsigned; signing/notarization must be performed on macOS.
       - name: Publish single-file
         id: publish
         shell: bash
@@ -50,7 +47,6 @@ jobs:
         run: |
           set -euo pipefail
           PROJ="Server.Stdio/Server.Stdio.csproj"
-          echo "Publishing $PROJ for RID=$RID"
 
           dotnet publish "$PROJ" -c Release -r "$RID" \
             -p:PublishSingleFile=true \
@@ -61,34 +57,46 @@ jobs:
           TF=$(dotnet msbuild "$PROJ" -getproperty:TargetFramework -nologo -v:quiet)
           PUB_DIR="$(dirname "$PROJ")/bin/Release/${TF}/${RID}/publish"
           echo "publish_dir=$PUB_DIR" >> "$GITHUB_OUTPUT"
-          echo "Publish dir: $PUB_DIR"
 
+          # Find the executable deterministically and resolve to an absolute path
           if [[ "$RID" == win* ]]; then
-            EXE=$(find "$PUB_DIR" -maxdepth 1 -type f -name "*.exe" | head -n1 || true)
+            EXE_PATH=$(find "$PUB_DIR" -maxdepth 1 -type f -name "*.exe" -print -quit || true)
           else
-            EXE=$(find "$PUB_DIR" -maxdepth 1 -type f -perm -u+x -printf '%f\n' -exec test -f "$PUB_DIR/{}" \; -print | head -n1 || true)
-            # Fallback in case -printf isn't supported
-            if [ -z "$EXE" ]; then EXE=$(find "$PUB_DIR" -maxdepth 1 -type f -perm -u+x | head -n1 || true); fi
+            # Prefer a file named Server.Stdio if present; otherwise any user-executable file
+            EXE_PATH=$(find "$PUB_DIR" -maxdepth 1 -type f -name "Server.Stdio" -perm -u+x -print -quit || true)
+            if [ -z "$EXE_PATH" ]; then
+              EXE_PATH=$(find "$PUB_DIR" -maxdepth 1 -type f -perm -u+x -print -quit || true)
+            fi
           fi
 
-          if [ -z "$EXE" ]; then
+          if [ -z "$EXE_PATH" ]; then
             echo "No executable found in $PUB_DIR" >&2
             ls -la "$PUB_DIR" || true
             exit 1
           fi
-          # Normalize to absolute path
-          if [[ ! "$EXE" = /* ]]; then EXE="$PUB_DIR/$EXE"; fi
-          echo "exe=$EXE" >> "$GITHUB_OUTPUT"
-          echo "Executable: $EXE"
+
+          # Resolve to absolute path to avoid later path concatenation issues
+          if command -v readlink >/dev/null 2>&1; then
+            EXE_ABS=$(readlink -f "$EXE_PATH")
+          else
+            EXE_ABS=$(python3 - << 'PY'
+import os,sys
+p=sys.argv[1]
+print(os.path.abspath(p))
+PY
+"$EXE_PATH")
+          fi
+
+          echo "exe=$EXE_ABS" >> "$GITHUB_OUTPUT"
+          echo "Executable: $EXE_ABS"
 
           # Detect sidecar native libraries (needed on some RIDs like macOS)
           SIDECAR=""
           for pattern in "*.so" "*.dylib"; do
-            CAND=$(find "$PUB_DIR" -maxdepth 1 -type f -name "$pattern" | head -n1 || true)
+            CAND=$(find "$PUB_DIR" -maxdepth 1 -type f -name "$pattern" -print -quit || true)
             if [ -n "$CAND" ]; then SIDECAR="$CAND"; break; fi
           done
           echo "sidecar=$SIDECAR" >> "$GITHUB_OUTPUT"
-          if [ -n "$SIDECAR" ]; then echo "Detected sidecar: $SIDECAR"; else echo "No sidecar native lib detected"; fi
 
       - name: Prepare native asset
         id: package
@@ -98,25 +106,20 @@ jobs:
           TAG: ${{ github.ref_name }}
         run: |
           set -euo pipefail
-          EXT=""
-          if [[ "$RID" == win* ]]; then EXT=".exe"; fi
+          EXT=""; [[ "$RID" == win* ]] && EXT=".exe"
           BASENAME="mcp-server-stdio-${TAG}-${RID}${EXT}"
           SRC="${{ steps.publish.outputs.exe }}"
-          DEST_DIR="$(mktemp -d)"
-          DEST="$DEST_DIR/$BASENAME"
+          DEST_DIR="$(mktemp -d)"; DEST="$DEST_DIR/$BASENAME"
           cp "$SRC" "$DEST"
           chmod +x "$DEST" || true
           echo "asset=$DEST" >> "$GITHUB_OUTPUT"
-          echo "Prepared native asset: $DEST"
 
-          # If sidecar exists, prepare it with a deterministic name
           SIDECAR_SRC="${{ steps.publish.outputs.sidecar }}"
           if [ -n "$SIDECAR_SRC" ]; then
             SNAME="mcp-server-stdio-${TAG}-${RID}-$(basename "$SIDECAR_SRC")"
             SC_DEST="$DEST_DIR/$SNAME"
             cp "$SIDECAR_SRC" "$SC_DEST"
             echo "sidecar_asset=$SC_DEST" >> "$GITHUB_OUTPUT"
-            echo "Prepared sidecar asset: $SC_DEST"
           else
             echo "sidecar_asset=" >> "$GITHUB_OUTPUT"
           fi
