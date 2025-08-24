@@ -149,19 +149,28 @@ dotnet build
 
 #### 2. Solar System Data Setup
 
-The server requires SPICE kernels for solar system calculations. You can configure the path in multiple ways (in order of priority):
+The server requires SPICE kernels for solar system calculations.
 
-1. **Environment Variable** (Recommended):
+- STDIO server configuration (no appsettings):
+  - Provide the kernels path via CLI or environment variable
+  - Priority: CLI flag > IO_DATA_DIR environment variable
+  - CLI flags: `-k <path>`, `--kernels <path>`, or `--kernels-path <path>`
+
+Examples:
 ```bash
-# Linux/macOS
-export IO_DATA_DIR="/path/to/your/spice/kernels"
+# Using CLI flag
+./Server.Stdio -k /path/to/your/spice/kernels
 
-# Windows
-set IO_DATA_DIR=C:\path\to\your\spice\kernels
+# Using environment variable (Linux/macOS)
+export IO_DATA_DIR="/path/to/your/spice/kernels"
+./Server.Stdio
+
+# Windows (PowerShell)
+$env:IO_DATA_DIR="C:\path\to\your\spice\kernels"
+./Server.Stdio.exe
 ```
 
-2. **Configuration File**: Edit `KernelsPath` in `appsettings.json`
-3. **Default Location**: Place files in `Data/SolarSystem/` directory
+- SSE server configuration: may use appsettings.json as before.
 
 **Required Kernel Files:**
 ```
@@ -173,14 +182,18 @@ kernels/
 └── ...                    # Additional kernel files
 ```
 
-- `IO_DATA_DIR`: Override kernels directory path (takes priority over appsettings.json)
-
 #### 3. Choose Transport Method
 
 ##### STDIO Transport (For MCP Clients)
+- Release assets are native executables per OS/RID (no ZIP). Filenames:
+  - mcp-server-stdio-<tag>-linux-x64
+  - mcp-server-stdio-<tag>-win-x64.exe
+  - mcp-server-stdio-<tag>-osx-arm64
+- On macOS, a sidecar native library may be provided (e.g., libIO.Astrodynamics.so). Place it in the same directory as the executable.
+
 ```bash
-cd Server.Stdio
-dotnet run
+# After publishing or downloading a release asset for your OS
+./Server.Stdio -k /path/to/kernels
 ```
 
 ##### SSE Transport (For Web/HTTP)
@@ -210,6 +223,19 @@ Note: Many MCP clients use JSON-based configuration files, but schemas differ pe
 
 ### Claude Desktop Configuration (STDIO)
 Add to your Claude Desktop configuration:
+
+```json
+{
+  "mcpServers": {
+    "astrodynamics": {
+      "command": "/path/to/Server.Stdio",
+      "args": ["-k", "/path/to/kernels"]
+    }
+  }
+}
+```
+
+Alternatively, set an environment variable if your client supports it:
 
 ```json
 {
@@ -286,9 +312,9 @@ Your support helps keep the hosted server online and the SPICE data current.
 
 ### Common Issues
 
-1. **"Kernels directory does not exist"**: Verify the kernels path exists and contains SPICE files
-2. **"Failed to load kernel"**: Ensure all required kernel files are present and accessible
-3. **Connection errors**: Check firewall settings and port availability
+1. "Kernels directory does not exist": Verify the path passed with `-k` (or `IO_DATA_DIR`) exists and contains SPICE files
+2. "Failed to load kernel": Ensure all required kernel files are present and accessible
+3. Connection errors: Check firewall settings and port availability
 
 ### Log Monitoring
 ```bash

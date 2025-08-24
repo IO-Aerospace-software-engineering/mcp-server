@@ -26,49 +26,65 @@ internal abstract class Program
             Log.Information("Starting IO-Aerospace MCP server...");
 
             var builder = Host.CreateApplicationBuilder(args);
-            
-            // Obtenir le répertoire de l'exécutable
+
+            // Application base directory (next to the executable)
             var baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
             Log.Information("Application base directory: {BaseDirectory}", baseDirectory);
-            
-            // Ajouter la configuration des fichiers appsettings.json avec chemins absolus
-            builder.Configuration
-                .AddJsonFile(Path.Combine(baseDirectory, "appsettings.json"), optional: false, reloadOnChange: true)
-                .AddJsonFile(Path.Combine(baseDirectory, $"appsettings.{builder.Environment.EnvironmentName}.json"), optional: true, reloadOnChange: true)
-                .AddEnvironmentVariables(); // Add environment variables to configuration
-            
+
+            // Only use environment variables for config (no appsettings)
+            builder.Configuration.AddEnvironmentVariables();
+
             builder.Services.AddSerilog();
             builder.Services.AddMcpServer()
                 .WithStdioServerTransport().WithToolsFromAssembly(typeof(CelestialBodyTools).Assembly);
             var app = builder.Build();
 
-            Log.Information("IO-Aerospace MCP server started successfully");
-            
-            // Check for environment variable override first, then fall back to configuration
-            var kernelsPath = Environment.GetEnvironmentVariable("IO_DATA_DIR") ?? builder.Configuration["KernelsPath"];
-            
-            if (string.IsNullOrEmpty(kernelsPath))
+            // Parse CLI for kernels path: --kernels-path <path> | --kernels <path> | -k <path>
+            string? kernelsPathArg = null;
+            for (int i = 0; i < args.Length; i++)
             {
-                Log.Error("KernelsPath is not set. Please set it in appsettings.json or use IO_DATA_DIR environment variable.");
+                var a = args[i];
+                if (a == "-k" || a == "--kernels" || a == "--kernels-path")
+                {
+                    if (i + 1 < args.Length)
+                    {
+                        kernelsPathArg = args[i + 1];
+                        i++;
+                    }
+                    else
+                    {
+                        Log.Error("Missing value for {Arg}. Usage: -k <path>", a);
+                        return 1;
+                    }
+                }
+            }
+
+            // Priority: CLI arg > IO_DATA_DIR env
+            var kernelsPath = kernelsPathArg ?? Environment.GetEnvironmentVariable("IO_DATA_DIR");
+
+            if (string.IsNullOrWhiteSpace(kernelsPath))
+            {
+                Log.Error("Kernels path not provided. Use -k|--kernels-path <path> or set IO_DATA_DIR environment variable.");
+                Log.Information("Example: ./Server.Stdio -k /path/to/your/spice/kernels");
                 return 1;
             }
-            
-            // Construire le chemin absolu vers les kernels
-            var absoluteKernelsPath = Path.IsPathRooted(kernelsPath) 
-                ? kernelsPath 
+
+            // Build absolute path; if relative, resolve next to the executable directory
+            var absoluteKernelsPath = Path.IsPathRooted(kernelsPath)
+                ? kernelsPath
                 : Path.Combine(baseDirectory, kernelsPath);
-            
+
             Log.Information("Trying to load kernels from {KernelsPath} (absolute: {AbsoluteKernelsPath})", kernelsPath, absoluteKernelsPath);
-            
+
             if (!Directory.Exists(absoluteKernelsPath))
             {
                 Log.Error("Kernels directory does not exist: {AbsoluteKernelsPath}", absoluteKernelsPath);
                 return 1;
             }
-            
+
             API.Instance.LoadKernels(new DirectoryInfo(absoluteKernelsPath));
             Log.Information("Kernels loaded successfully from {AbsoluteKernelsPath}", absoluteKernelsPath);
-            
+
             await app.RunAsync();
             return 0;
         }

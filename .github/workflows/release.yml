@@ -55,7 +55,8 @@ jobs:
           dotnet publish "$PROJ" -c Release -r "$RID" \
             -p:PublishSingleFile=true \
             -p:SelfContained=true \
-            -p:PublishTrimmed=false
+            -p:PublishTrimmed=false \
+            -p:IncludeNativeLibrariesForSelfExtract=true
 
           TF=$(dotnet msbuild "$PROJ" -getproperty:TargetFramework -nologo -v:quiet)
           PUB_DIR="$(dirname "$PROJ")/bin/Release/${TF}/${RID}/publish"
@@ -65,7 +66,9 @@ jobs:
           if [[ "$RID" == win* ]]; then
             EXE=$(find "$PUB_DIR" -maxdepth 1 -type f -name "*.exe" | head -n1 || true)
           else
-            EXE=$(find "$PUB_DIR" -maxdepth 1 -type f -perm -u+x | head -n1 || true)
+            EXE=$(find "$PUB_DIR" -maxdepth 1 -type f -perm -u+x -printf '%f\n' -exec test -f "$PUB_DIR/{}" \; -print | head -n1 || true)
+            # Fallback in case -printf isn't supported
+            if [ -z "$EXE" ]; then EXE=$(find "$PUB_DIR" -maxdepth 1 -type f -perm -u+x | head -n1 || true); fi
           fi
 
           if [ -z "$EXE" ]; then
@@ -73,10 +76,21 @@ jobs:
             ls -la "$PUB_DIR" || true
             exit 1
           fi
+          # Normalize to absolute path
+          if [[ ! "$EXE" = /* ]]; then EXE="$PUB_DIR/$EXE"; fi
           echo "exe=$EXE" >> "$GITHUB_OUTPUT"
           echo "Executable: $EXE"
 
-      - name: Prepare asset for Release
+          # Detect sidecar native libraries (needed on some RIDs like macOS)
+          SIDECAR=""
+          for pattern in "*.so" "*.dylib"; do
+            CAND=$(find "$PUB_DIR" -maxdepth 1 -type f -name "$pattern" | head -n1 || true)
+            if [ -n "$CAND" ]; then SIDECAR="$CAND"; break; fi
+          done
+          echo "sidecar=$SIDECAR" >> "$GITHUB_OUTPUT"
+          if [ -n "$SIDECAR" ]; then echo "Detected sidecar: $SIDECAR"; else echo "No sidecar native lib detected"; fi
+
+      - name: Prepare native asset
         id: package
         shell: bash
         env:
@@ -88,21 +102,51 @@ jobs:
           if [[ "$RID" == win* ]]; then EXT=".exe"; fi
           BASENAME="mcp-server-stdio-${TAG}-${RID}${EXT}"
           SRC="${{ steps.publish.outputs.exe }}"
-          DEST="${{ steps.publish.outputs.publish_dir }}/$BASENAME"
+          DEST_DIR="$(mktemp -d)"
+          DEST="$DEST_DIR/$BASENAME"
           cp "$SRC" "$DEST"
+          chmod +x "$DEST" || true
           echo "asset=$DEST" >> "$GITHUB_OUTPUT"
-          echo "Packaged asset: $DEST"
+          echo "Prepared native asset: $DEST"
 
-      - name: Upload asset to GitHub Release
+          # If sidecar exists, prepare it with a deterministic name
+          SIDECAR_SRC="${{ steps.publish.outputs.sidecar }}"
+          if [ -n "$SIDECAR_SRC" ]; then
+            SNAME="mcp-server-stdio-${TAG}-${RID}-$(basename "$SIDECAR_SRC")"
+            SC_DEST="$DEST_DIR/$SNAME"
+            cp "$SIDECAR_SRC" "$SC_DEST"
+            echo "sidecar_asset=$SC_DEST" >> "$GITHUB_OUTPUT"
+            echo "Prepared sidecar asset: $SC_DEST"
+          else
+            echo "sidecar_asset=" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Upload executable to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
           files: ${{ steps.package.outputs.asset }}
           fail_on_unmatched_files: true
 
-      - name: Upload executable artifact
+      - name: Upload sidecar (if any) to GitHub Release
+        if: ${{ steps.package.outputs.sidecar_asset != '' }}
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          files: ${{ steps.package.outputs.sidecar_asset }}
+          fail_on_unmatched_files: true
+
+      - name: Upload artifact (native executable)
         uses: actions/upload-artifact@v4
         with:
           name: io-aerosapce-mcp-${{ github.ref_name }}-${{ matrix.rid }}
           path: ${{ steps.package.outputs.asset }}
+          if-no-files-found: error
+
+      - name: Upload artifact (sidecar if any)
+        if: ${{ steps.package.outputs.sidecar_asset != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: io-aerosapce-mcp-${{ github.ref_name }}-${{ matrix.rid }}-sidecar
+          path: ${{ steps.package.outputs.sidecar_asset }}
           if-no-files-found: error

@@ -1,0 +1,10 @@
+<Project>
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <DebugType>none</DebugType>
+    <DebugSymbols>false</DebugSymbols>
+    <EmbedAllSources>false</EmbedAllSources>
+    <IncludeSymbolsInSingleFile>false</IncludeSymbolsInSingleFile>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+  </PropertyGroup>
+</Project>
+
