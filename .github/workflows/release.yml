@@ -79,12 +79,7 @@ jobs:
           if command -v readlink >/dev/null 2>&1; then
             EXE_ABS=$(readlink -f "$EXE_PATH")
           else
-            EXE_ABS=$(python3 - << 'PY'
-import os,sys
-p=sys.argv[1]
-print(os.path.abspath(p))
-PY
-"$EXE_PATH")
+            EXE_ABS=$(python3 -c 'import os,sys; print(os.path.abspath(sys.argv[1]))' "$EXE_PATH")
           fi
 
           echo "exe=$EXE_ABS" >> "$GITHUB_OUTPUT"
