@@ -1,42 +1,84 @@
 <!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>IO Aerospace MCP Server – Quick How To</title>
-  <style>
-    :root { color-scheme: light dark; }
-    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Arial, sans-serif; line-height: 1.5; margin: 0; }
-    main { max-width: 860px; margin: 0 auto; padding: 28px 16px 56px; }
-    h1, h2 { margin: 0 0 12px; line-height: 1.2; }
-    section { margin: 20px 0 24px; }
-    pre { background: rgba(127,127,127,.12); padding: 10px 12px; border-radius: 8px; overflow: auto; }
-    code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; font-size: 0.95em; }
-    ul { margin: 8px 0 0 18px; }
+
+<style>
+    :root {
+        color-scheme: light dark;
+    }
+
+    body {
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Arial, sans-serif;
+        line-height: 1.5;
+        margin: 0;
+    }
+
+    main {
+        max-width: 860px;
+        margin: 0 auto;
+        padding: 28px 16px 56px;
+    }
+
+    h1, h2 {
+        margin: 0 0 12px;
+        line-height: 1.2;
+    }
+
+    section {
+        margin: 20px 0 24px;
+    }
+
+    pre {
+        background: rgba(127, 127, 127, .12);
+        padding: 10px 12px;
+        border-radius: 8px;
+        overflow: auto;
+    }
+
+    code {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+        font-size: 0.95em;
+    }
+
+    ul {
+        margin: 8px 0 0 18px;
+    }
+
     /* Brand colors */
-    p { color: #8A8A8A; }
-    a { color: #B38B4F; text-decoration: none; }
-    a:hover { text-decoration: underline; }
-    h2 { color: #B38B4F; }
-  </style>
-</head>
-<body>
-<main>
-  <!-- Removed main title per integration into existing page -->
-  <p>Use the hosted server now, or self-host fast with Docker or .NET. Minimal steps below.</p>
+    p {
+        color: #8A8A8A;
+    }
 
-  <section>
-    <h2>1) Hosted (no setup)</h2>
-    <ul>
-      <li>Base URL: <a href="https://mcp.io-aerospace.org" target="_blank" rel="noreferrer noopener">https://mcp.io-aerospace.org</a></li>
-      <li>SSE (manual/web): <a href="https://mcp.io-aerospace.org/sse" target="_blank" rel="noreferrer noopener">/sse</a></li>
-      <li>Most MCP clients only need the base URL.</li>
-    </ul>
-  </section>
+    a {
+        color: #B38B4F;
+        text-decoration: none;
+    }
 
-  <section>
-    <h2>2) MCP client (Claude Desktop, HTTP)</h2>
-    <pre><code class="language-json">{
+    a:hover {
+        text-decoration: underline;
+    }
+
+    h2 {
+        color: white;
+    }
+    h3 {
+        color: white;
+    }
+</style>
+<div>
+    <!-- Removed main title per integration into existing page -->
+    <p>Use the hosted server now, or self-host fast with Docker or .NET. Minimal steps below.</p>
+
+    <section>
+        <h3>1 | Hosted (no setup)</h3>
+        <ul>
+            <li>Base URL: <a href="https://mcp.io-aerospace.org" target="_blank" rel="noreferrer noopener">https://mcp.io-aerospace.org</a></li>
+            <li>SSE (manual/web): <a href="https://mcp.io-aerospace.org/sse" target="_blank" rel="noreferrer noopener">/sse</a></li>
+            <li>Most MCP clients only need the base URL.</li>
+        </ul>
+    </section>
+
+    <section>
+        <h3>2 | MCP client (Claude Desktop, HTTP)</h3>
+        <pre><code class="language-json">{
   "mcpServers": {
     "astrodynamics": {
       "transport": { "type": "http", "url": "https://mcp.io-aerospace.org" }
@@ -44,21 +86,21 @@
   }
 }
 </code></pre>
-  </section>
+    </section>
 
-  <section>
-    <h2>3) Self-host quick</h2>
-    <p><strong>Docker (dev):</strong></p>
-    <pre><code class="language-bash">git clone https://github.com/IO-Aerospace-software-engineering/mcp-server
+    <section>
+        <h3>3 | Self-host quick</h3>
+        <p><strong>Docker (dev):</strong></p>
+        <pre><code class="language-bash">git clone https://github.com/IO-Aerospace-software-engineering/mcp-server
 cd mcp-server
 docker-compose up
 </code></pre>
-    <ul>
-      <li>HTTP: http://localhost:8080</li>
-    </ul>
+        <ul>
+            <li>HTTP: http://localhost:8080</li>
+        </ul>
 
-    <p><strong>.NET:</strong></p>
-    <pre><code class="language-bash">git clone https://github.com/IO-Aerospace-software-engineering/mcp-server
+        <p><strong>.NET:</strong></p>
+        <pre><code class="language-bash">git clone https://github.com/IO-Aerospace-software-engineering/mcp-server
 cd mcp-server
 dotnet build
 # STDIO (MCP clients)
@@ -68,35 +110,33 @@ export IO_DATA_DIR="/path/to/kernels" && ./Server.Stdio
 # HTTP/SSE (web)
 cd Server.Sse && dotnet run  # http://localhost:8080
 </code></pre>
-  </section>
+    </section>
 
-  <section>
-    <h2>4) Kernels (minimal set)</h2>
-    <ul>
-      <li>de440s.bsp (ephemeris)</li>
-      <li>latest_leapseconds.tls</li>
-      <li>pck00011.tpc</li>
-      <li>earth_latest_high_prec.bpc</li>
-    </ul>
-  </section>
+    <section>
+        <h3>4 | Kernels (minimal set)</h3>
+        <ul>
+            <li>de440s.bsp (ephemeris)</li>
+            <li>latest_leapseconds.tls</li>
+            <li>pck00011.tpc</li>
+            <li>earth_latest_high_prec.bpc</li>
+        </ul>
+    </section>
 
-  <section>
-    <h2>5) Troubleshooting</h2>
-    <ul>
-      <li>Missing kernels dir: fix <code>-k</code> or <code>IO_DATA_DIR</code> path.</li>
-      <li>Kernel load failed: ensure files exist and are readable.</li>
-      <li>HTTP errors: check ports/firewall/proxy.</li>
-    </ul>
-  </section>
+    <section>
+        <h3>5 | Troubleshooting</h3>
+        <ul>
+            <li>Missing kernels dir: fix <code>-k</code> or <code>IO_DATA_DIR</code> path.</li>
+            <li>Kernel load failed: ensure files exist and are readable.</li>
+            <li>HTTP errors: check ports/firewall/proxy.</li>
+        </ul>
+    </section>
 
-  <section>
-    <h2>Links</h2>
-    <ul>
-      <li>Hosted: <a href="https://mcp.io-aerospace.org" target="_blank" rel="noreferrer noopener">mcp.io-aerospace.org</a></li>
-      <li>Repo: <a href="https://github.com/IO-Aerospace-software-engineering/mcp-server" target="_blank" rel="noreferrer noopener">GitHub</a></li>
-      <li>Astrodynamics framework: <a href="https://github.com/IO-Aerospace-software-engineering/Astrodynamics" target="_blank" rel="noreferrer noopener">GitHub</a></li>
-    </ul>
-  </section>
-</main>
-</body>
-</html>
+    <section>
+        <h3>Links</h3>
+        <ul>
+            <li>Hosted: <a href="https://mcp.io-aerospace.org" target="_blank" rel="noreferrer noopener">mcp.io-aerospace.org</a></li>
+            <li>Repo: <a href="https://github.com/IO-Aerospace-software-engineering/mcp-server" target="_blank" rel="noreferrer noopener">GitHub</a></li>
+            <li>Astrodynamics framework: <a href="https://github.com/IO-Aerospace-software-engineering/Astrodynamics" target="_blank" rel="noreferrer noopener">GitHub</a></li>
+        </ul>
+    </section>
+</div>
