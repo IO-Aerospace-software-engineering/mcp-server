@@ -68,7 +68,7 @@
     <p>Use the hosted server now, or self-host fast with Docker or .NET. Minimal steps below.</p>
 
     <section>
-        <h3>1 | Hosted (no setup)</h3>
+        <h3>Hosted (no setup)</h3>
         <ul>
             <li>Base URL: <a href="https://mcp.io-aerospace.org" target="_blank" rel="noreferrer noopener">https://mcp.io-aerospace.org</a></li>
             <li>SSE (manual/web): <a href="https://mcp.io-aerospace.org/sse" target="_blank" rel="noreferrer noopener">/sse</a></li>
@@ -77,7 +77,7 @@
     </section>
 
     <section>
-        <h3>2 | MCP client (Claude Desktop, HTTP)</h3>
+        <h3>MCP client (Claude Desktop, HTTP)</h3>
         <pre><code class="language-json">{
   "mcpServers": {
     "astrodynamics": {
@@ -89,7 +89,7 @@
     </section>
 
     <section>
-        <h3>3 | Self-host quick</h3>
+        <h3>Self-host quick</h3>
         <p><strong>Docker (dev):</strong></p>
         <pre><code class="language-bash">git clone https://github.com/IO-Aerospace-software-engineering/mcp-server
 cd mcp-server
@@ -113,7 +113,7 @@ cd Server.Sse && dotnet run  # http://localhost:8080
     </section>
 
     <section>
-        <h3>4 | Kernels (minimal set)</h3>
+        <h3>Kernels (minimal set)</h3>
         <ul>
             <li>de440s.bsp (ephemeris)</li>
             <li>latest_leapseconds.tls</li>
@@ -123,7 +123,7 @@ cd Server.Sse && dotnet run  # http://localhost:8080
     </section>
 
     <section>
-        <h3>5 | Troubleshooting</h3>
+        <h3>Troubleshooting</h3>
         <ul>
             <li>Missing kernels dir: fix <code>-k</code> or <code>IO_DATA_DIR</code> path.</li>
             <li>Kernel load failed: ensure files exist and are readable.</li>
