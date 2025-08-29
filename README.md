@@ -345,3 +345,8 @@ For support and questions:
 - Review the deployment guide in [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md)
 
 Sylvain
+
+> New: A step-by-step How To guide is available:
+> - Markdown: [docs/HowTo.md](docs/HowTo.md)
+> - HTML (full): [docs/howto.html](docs/howto.html)
+> - HTML (compact): [docs/howto-mini.html](docs/howto-mini.html)
